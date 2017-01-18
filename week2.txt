@@ -1,0 +1,56 @@
+BEGIN_GUESTS
+Antrobus, Ayodele, Basak, Bhasin, Carson, Castro, Currin
+Dusterwald, Duut, Holtzhausen, Khangamwa, Khoza, Lam
+Maras, Maxime, Mebwe, Mtetwa, Naumann, Niit, Powanwe
+Prince, Ramdani, Rayner, Rudelt, Shavina, Soldado
+Sweke, Taylor, Thorat, Yusuf, Zelleke, Zwane
+END_GUESTS
+
+BEGIN_TABLES
+Ranjan, Raimondo, Vogels, Lillicrap, Abbott, Poirazi, Ramaswamy
+END_TABLES
+
+BEGIN_DATES
+Tuesday, Wednesday, Thursday, Friday, Sunday
+END_DATES
+
+BEGIN_GUEST_PREFERENCES
+Antrobus    : 1,0,1,1,1,1,1 
+Basak       : 1,1,1,1,1,1,0
+Bhasin      : 0,1,0,1,2,1,1 
+Carson      : 1,1,1,2,1,0,0
+Currin      : 1,0,0,2,1,1,1
+Dusterwald  : 1,0,1,1,1,1,1 
+Khoza       : 1,1,1,1,1,1,0 
+Lam         : 0,0,2,1,1,1,1
+Maras       : 1,1,1,1,1,0,1 
+Mebwe       : 1,1,1,1,0,1,1 
+Naumann     : 1,0,1,1,1,1,1 
+Niit        : 1,0,1,1,1,1,1
+Powanwe     : 1,1,1,1,1,1,0 
+Prince      : 0,1,1,1,1,1,1
+Shavina     : 1,1,1,1,1,0,1
+Soldado     : 1,1,1,1,0,1,1 
+Sweke       : 0,0,2,2,1,0,1
+Thorat      : 0,0,2,2,2,0,0
+Yusuf       : 0,1,1,1,2,0,1
+Zelleke     : 1,1,1,1,0,1,1 
+Zwane       : 1,1,1,1,1,0,1
+END_GUEST_PREFERENCES
+
+BEGIN_TABLE_AVAILABILITIES
+Ranjan:    1,1,1,1,0
+Raimondo:  1,1,1,1,1
+Vogels:    0,1,1,1,1
+Lillicrap: 1,1,1,1,1
+Abbott:    1,1,1,1,1
+Poirazi:   1,1,1,1,0
+Ramaswamy: 1,1,1,1,0
+END_TABLE_AVAILABILITIES
+
+BEGIN_PARAMS
+max_guests_per_table_per_date = 12
+min_guests_per_table_per_date = 1
+max_each_table_per_guest = 2
+min_each_table_per_guest = 0.5
+END_PARAMS
