@@ -49,8 +49,8 @@ Ramaswamy: 1,1,1,1,0
 END_TABLE_AVAILABILITIES
 
 BEGIN_PARAMS
-max_guests_per_table_per_date = 12
-min_guests_per_table_per_date = 1
+max_guests_per_table_per_date = 10
+min_guests_per_table_per_date = 4
 max_each_table_per_guest = 2
-min_each_table_per_guest = 0.5
+min_each_desired_table_per_guest = 0.4
 END_PARAMS
