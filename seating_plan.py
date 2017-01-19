@@ -1,3 +1,5 @@
+## TODO: Even out tables while maintaining constraints.
+
 import os as os
 from numpy import *
 import cvxpy as cvx
@@ -383,6 +385,38 @@ def ind_from_config(table, date, guest):
 def loss_function(s):
     return -dot(c.T, s) + occupancy_variance_weight*0.5*mean((dot(A_table_occupancy,s) - mean_table_occupancy_per_date)**2)
 
+def greedy_optimize_rounded_solution(rounded_solution, max_iters = 10000):
+    best_loss = loss_function(rounded_solution)
+    best_schedule = copy(rounded_solution)
+    for t in range(max_iters):
+        seating_plan = where(best_schedule)[0]
+        schedule = copy(best_schedule)
+        descr = "No change."
+        improved = False
+        for old_ind in seating_plan:
+            table, date, guest = config_from_ind(old_ind)
+            available_tables = list(where(availabilities[:,date])[0])
+            available_tables.remove(table)
+            for new_table in available_tables:
+                new_ind      = ind_from_config(new_table,date,guest)
+                new_schedule = copy(schedule)
+                new_schedule[old_ind] = 0
+                new_schedule[new_ind] = 1
+                # Check that the new schedule is feasable
+                feasable = allclose(dot(A_eq,new_schedule), b_eq) and all(dot(A_ub, new_schedule) <= b_ub)
+                # Check that the loss is lower
+                new_loss   = loss_function(new_schedule)
+                lower_loss = new_loss < best_loss
+                if lower_loss and feasable:
+                    improved = True
+                    descr = "Moving {} from {} to {} on {} improved the loss from {} to {}".format(t, guests[guest], tables[table], tables[new_table], date, best_loss, new_loss)
+                    best_loss = new_loss
+                    best_schedule = copy(new_schedule)
+        LOG("Iteration {}: {}".format(t,descr))
+        if not improved:
+            break
+    return best_schedule
+
 def write_schedule_as_list():
     file_name = "{}.schedule.list.txt".format(schedule_name)
     with (open(file_name ,"w")) as fp:
@@ -418,8 +452,11 @@ build_linear_program()
 LOG("RUNNING CONVEX PROGRAM.")
 relaxed_schedule = run_convex_program()
 LOG("ROUNDING SOLUTION.")
-schedule, losses = round_solution(relaxed_schedule, num_rounds = num_rounding_iters, mode="random")
-LOG("Objective for final schedule: {}".format(loss_function(schedule)))
+rounded_schedule, losses = round_solution(relaxed_schedule, num_rounds = num_rounding_iters, mode="random")
+LOG("\tObjective for rounded schedule: {:.2f}".format(loss_function(rounded_schedule)))
+LOG("GREEDY OPTIMIZING ROUNDED SOLUTION.")
+schedule = greedy_optimize_rounded_solution(rounded_schedule)
+LOG("\tObjective for final schedule: {:.2f}".format(loss_function(schedule)))
 schedule_as_matrix = reshape(schedule, (num_guests, num_tables*num_dates), order="C")
 LOG("WRITING SCHEDULE AS LIST.")
 write_schedule_as_list()
