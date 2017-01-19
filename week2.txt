@@ -1,3 +1,15 @@
+# Parameters
+BEGIN_PARAMS
+max_guests_per_table_per_date = 10
+min_guests_per_table_per_date = 4
+max_each_table_per_guest = 2
+min_each_desired_table_per_guest = 0.4
+occupancy_variance_weight = 10.
+random_seed = 0
+num_rounding_iters = 1000
+END_PARAMS
+
+# The guests, specified as a comma separated list
 BEGIN_GUESTS
 Antrobus, Ayodele, Basak, Bhasin, Carson, Castro, Currin
 Dusterwald, Duut, Holtzhausen, Khangamwa, Khoza, Lam
@@ -6,14 +18,19 @@ Prince, Ramdani, Rayner, Rudelt, Shavina, Soldado
 Sweke, Taylor, Thorat, Yusuf, Zelleke, Zwane
 END_GUESTS
 
+# The tables, specified as a comma separated list
 BEGIN_TABLES
 Ranjan, Raimondo, Vogels, Lillicrap, Abbott, Poirazi, Ramaswamy
 END_TABLES
 
+# The dates, specified as a comma separated list
 BEGIN_DATES
 Tuesday, Wednesday, Thursday, Friday, Sunday
 END_DATES
 
+# Guest preferences for tables.
+# The format is GuestName : pref1,pref2,...,prefn
+# The preferences are in the order in which faculty are specified.
 BEGIN_GUEST_PREFERENCES
 Antrobus    : 1,0,1,1,1,1,1 
 Basak       : 1,1,1,1,1,1,0
@@ -38,6 +55,10 @@ Zelleke     : 1,1,1,1,0,1,1
 Zwane       : 1,1,1,1,1,0,1
 END_GUEST_PREFERENCES
 
+# Table availabilities
+# The format is
+# TableName : avail1, avail2,...,availn
+# The order of availabilities should be that in which the dates were specified.
 BEGIN_TABLE_AVAILABILITIES
 Ranjan:    1,1,1,1,0
 Raimondo:  1,1,1,1,1
@@ -47,10 +68,3 @@ Abbott:    1,1,1,1,1
 Poirazi:   1,1,1,1,0
 Ramaswamy: 1,1,1,1,0
 END_TABLE_AVAILABILITIES
-
-BEGIN_PARAMS
-max_guests_per_table_per_date = 10
-min_guests_per_table_per_date = 4
-max_each_table_per_guest = 2
-min_each_desired_table_per_guest = 0.4
-END_PARAMS
