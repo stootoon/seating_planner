@@ -1,0 +1,69 @@
+# Parameters
+BEGIN_PARAMS
+max_guests_per_table_per_date = 10
+min_guests_per_table_per_date = 4
+max_each_table_per_guest = 2
+min_each_desired_table_per_guest = 0.4
+occupancy_variance_weight = 10.
+random_seed = 0
+num_rounding_iters = 1000
+END_PARAMS
+
+# The guests, specified as a comma separated list
+BEGIN_GUESTS
+Iliana, Dorinda, Brigid, Gema, Suzy, Vernita, Antony,
+Meagan, Lawanna, Lenore, Jarrod, Lyndon, Mauro, Madonna,
+Annie, Tobias, Alisha, Gudrun, Odell, Piper, Daniel,
+Mi, Alysia, Alba, Sigrid, Deetta, Leila, Loyce, Rosana,Xenia,
+END_GUESTS
+
+# The tables, specified as a comma separated list
+BEGIN_TABLES
+Cajal, Golgi, Hodgkin, Huxley, Katz, Hebb, Dale
+END_TABLES
+
+# The dates, specified as a comma separated list
+BEGIN_DATES
+Monday, Tuesday, Wednesday, Thursday, Friday
+END_DATES
+
+# Guest preferences for tables.
+# The format is GuestName : pref1,pref2,...,prefn
+# The preferences are in the order in which faculty are specified.
+BEGIN_GUEST_PREFERENCES
+Dorinda  : 1,0,1,1,1,1,1 
+Gema     : 1,1,1,1,1,1,0
+Loyce    : 0,1,0,1,2,1,1 
+Alysia   : 1,1,1,2,1,0,0
+Alba     : 1,0,0,2,1,1,1
+Sigrid   : 1,0,1,1,1,1,1 
+Leila    : 1,1,1,1,1,1,0 
+Lyndon   : 0,0,2,1,1,1,1
+Mauro    : 1,1,1,1,1,0,1 
+Antony   : 1,1,1,1,0,1,1 
+Rosana   : 1,0,1,1,1,1,1 
+Xenia    : 1,0,1,1,1,1,1
+Suzy     : 1,1,1,1,1,1,0 
+Jarrod   : 0,1,1,1,1,1,1
+Alisha   : 1,1,1,1,1,0,1
+Odell    : 1,1,1,1,0,1,1 
+Mi       : 0,0,2,2,1,0,1
+Meagan   : 0,0,2,2,2,0,0
+Iliana   : 0,1,1,1,2,0,1
+Vernita  : 1,1,1,1,0,1,1 
+Alba     : 1,1,1,1,1,0,1
+END_GUEST_PREFERENCES
+
+# Table availabilities
+# The format is
+# TableName : avail1, avail2,...,availn
+# The order of availabilities should be that in which the dates were specified.
+BEGIN_TABLE_AVAILABILITIES
+Cajal:    1,1,1,1,0
+Golgi:    1,1,1,1,1
+Hebb:     0,1,1,1,1
+Katz:     1,1,1,1,1
+Hodgkin:  1,1,1,1,1
+Huxley:   1,1,1,1,0
+Dale:     1,1,1,1,0
+END_TABLE_AVAILABILITIES

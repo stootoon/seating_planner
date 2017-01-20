@@ -1,5 +1,4 @@
-## TODO: Even out tables while maintaining constraints.
-
+import sys
 import os as os
 from numpy import *
 import cvxpy as cvx
@@ -9,17 +8,12 @@ verbose = True
 
 schedule_name = ""
 
+## The basic lists specifying the problem domain
 guests = list()
 tables = list()
 dates  = list()
-
-## Dictionaries mapping names to indices.
-GUEST2ID= []
-TABLE2ID= []
-DATE2ID = []
-
 availabilities = [] # A num_tables x num_dates binary matrix of table availabilities
-preferences = []    # A num_guests x num_tables matrix of guest preferences for tables
+preferences    = [] # A num_guests x num_tables matrix of guest preferences for tables
 
 ## PARAMETERS
 max_guests_per_table_per_date    = None 
@@ -50,24 +44,15 @@ b_guests__available_tables   = []
 b_dates__available_tables    = []
 b_dates__interested_guests_available_tables = []
 
-## LINEAR PROGRAMMING VARIABLES
+## CONVEX PROGRAMMING VARIABLES
 c    = [] # The objective, a suitably reshaped version of the guests' preferences
 A_eq = [] # The matrix specifying the elements invovled in the equalities
 b_eq = [] # The values of the equalities
 A_ub = [] # The matrix specifying the elements involved in the upper bounds
 b_ub = [] # The values of the upper bounds
-
-### Table occupancy variance variables
-number_of_tables_per_date     = []
+## Table occupancy variance variables
 mean_table_occupancy_per_date = []
 A_table_occupancy             = []
-
-## LINEAR PROGRAMMING RESULTS
-relaxed_schedule   = [] # What the linear program will return
-rounded_schedule   = [] # The schedule after rounding
-schedule           = [] # The final schedule 
-schedule_as_matrix = [] # The final schedule, reshaped to a guests x (dates x tables) matrix.
-
 
 def LOG(string):
     if verbose:
@@ -80,7 +65,6 @@ def parse_input_file(input_file):
     global schedule_name    
     global guests, tables, dates
     global preferences, availabilities
-    global GUEST2ID, TABLE2ID, DATE2ID
     global max_guests_per_table_per_date
     global min_guests_per_table_per_date
     global max_each_table_per_guest
@@ -92,6 +76,11 @@ def parse_input_file(input_file):
     parts = os.path.basename(input_file).split(".")
     schedule_name = parts[0]
     LOG("SCHEDULE NAME: {}\n".format(schedule_name))
+
+    ## Dictionaries mapping names to indices.
+    GUEST2ID= []
+    TABLE2ID= []
+    DATE2ID = []
     
     state = "SCAN"
     with open(input_file,"r") as fp:
@@ -137,7 +126,8 @@ def parse_input_file(input_file):
                     GUEST2ID = dict(zip(guests, range(len(guests))))
                     state = "SCAN"
                 else:
-                    new_guests =  [s.strip() for s in line.split(",")]
+                    new_guests = [s.strip() for s in line.split(",")]
+                    new_guests = [g for g in new_guests if len(g)>0]
                     guests = guests + new_guests
                     LOG("Appended {} guests: {}".format(len(new_guests), new_guests))
     
@@ -146,7 +136,8 @@ def parse_input_file(input_file):
                     TABLE2ID = dict(zip(tables, range(len(tables))))
                     state = "SCAN"
                 else:
-                    new_tables =  [s.strip() for s in line.split(",")]
+                    new_tables = [s.strip() for s in line.split(",")]
+                    new_tables = [t for t in new_tables if len(t)>0]                    
                     tables = tables + new_tables
                     LOG("Appended {} tables: {}".format(len(new_tables), new_tables))            
     
@@ -155,7 +146,8 @@ def parse_input_file(input_file):
                     DATE2ID = dict(zip(dates, range(len(dates))))
                     state = "SCAN"
                 else:
-                    new_dates =  [s.strip() for s in line.split(",")]
+                    new_dates = [s.strip() for s in line.split(",")]
+                    new_dates = [d for d in new_dates if len(d)>0]
                     dates = dates + new_dates
                     LOG("Appended {} dates: {}".format(len(new_dates), new_dates))
     
@@ -182,11 +174,11 @@ def parse_input_file(input_file):
                 if state == "SCAN": # Insert a line break if we're back to scanning mode.
                     LOG("")
 
-
-def build_constraints_matrices():
-    ### Fills in the values of the constraints vectors and matrices.
+def build_marginalization_matrices():
+    ### Fills in the values of the marginalization matrices and corresponding vectors.
     ### The rows of the matrices are filled in by flattening a 3D guests x dates x tables
-    ### tensor with 1's at the desired locations for each sum.
+    ### tensor with 1's at the desired locations for each sum. Multiplying each row
+    ### with a schedule vector performs the corresponding marginalization.
     ### The vectors are just conformable placeholders that are initailized to 1s.
     
     ## Constraint matrices
@@ -272,7 +264,7 @@ def remove_empty_rows(A,b):
     b1 = b[row_sums>0]
     return A1,b1
 
-def build_linear_program():
+def build_feasability_matrices():
     ### Combines the constraints matrices and sets the values of the corresponding
     ### constraints vectors to set up the equality and upper bounds constraints for the
     ### linear program.
@@ -355,7 +347,6 @@ def round_solution(relaxed_solution, num_rounds = 100, mode = "random"):
     best_schedule = copy(relaxed_solution)
     best_loss     = Inf
     losses        = zeros((num_rounds,))
-
     for r in tqdm(range(num_rounds)):
         schedule = 0*relaxed_solution
         for i in range(0, schedule_length, num_tables):
@@ -417,26 +408,32 @@ def greedy_optimize_rounded_solution(rounded_solution, max_iters = 10000):
             break
     return best_schedule
 
-def write_schedule_as_list():
+def write_schedule_as_list(schedule_as_matrix):
     file_name = "{}.schedule.list.txt".format(schedule_name)
     with (open(file_name ,"w")) as fp:
         ind = 0
         for d in range(num_dates):
-            LOG(dates[d].upper())
             fp.write("{}\n".format(dates[d].upper()))
             for t in range(num_tables):
                 ind = (d*num_tables + t)
-                LOG("\t{} ({})".format(tables[t], availabilities[t,d]))
-                fp.write("\t{}\n".format(tables[t]))
                 col = schedule_as_matrix[:,ind]
                 guests_list = [guests[i] for i in range(num_guests) if schedule_as_matrix[i,ind]>0]
                 scores_list   = [preferences[i,t] for i in range(num_guests) if schedule_as_matrix[i,ind]>0]
-                for i in range(len(guests_list)):
-                    LOG("\t\t{:16s} ({})".format(guests_list[i], scores_list[i]))
-                    fp.write("\t\t{:16s} ({})\n".format(guests_list[i], scores_list[i]))
+                if len(guests_list) > 0:
+                    fp.write("\t{}\n".format(tables[t]))
+                    for i in range(len(guests_list)):
+                        fp.write("\t\t{:16s} ({})\n".format(guests_list[i], scores_list[i]))
+    LOG("\tWrote {}.".format(file_name))
 
+### THE DRIVER CODE
+if len(sys.argv)!=2:
+    print "Usage: seating_plan input.txt"
+    exit()
 
-parse_input_file("week2.txt")
+input_file = sys.argv[1]
+LOG("Parsing {}.".format(input_file))
+parse_input_file(input_file)
+    
 num_tables = len(tables)
 num_guests = len(guests)
 num_dates  = len(dates)
@@ -445,19 +442,22 @@ schedule_length = num_tables*num_guests*num_dates
 
 random.seed(random_seed)
 
-LOG("BUILDING CONSTRAINTS MATRICES.")
-build_constraints_matrices()
-LOG("BUILDING CONVEX PROGRAM.")
-build_linear_program()
+LOG("BUILDING MARGINALIZATION MATRICES.")
+build_marginalization_matrices()
+
+LOG("BUILDING FEASABILITY MATRICES.")
+build_feasability_matrices()
+
 LOG("RUNNING CONVEX PROGRAM.")
 relaxed_schedule = run_convex_program()
+
 LOG("ROUNDING SOLUTION.")
 rounded_schedule, losses = round_solution(relaxed_schedule, num_rounds = num_rounding_iters, mode="random")
 LOG("\tObjective for rounded schedule: {:.2f}".format(loss_function(rounded_schedule)))
 LOG("GREEDY OPTIMIZING ROUNDED SOLUTION.")
 schedule = greedy_optimize_rounded_solution(rounded_schedule)
-LOG("\tObjective for final schedule: {:.2f}".format(loss_function(schedule)))
+LOG("\tObjective for final schedule:   {:.2f}".format(loss_function(schedule)))
 schedule_as_matrix = reshape(schedule, (num_guests, num_tables*num_dates), order="C")
 LOG("WRITING SCHEDULE AS LIST.")
-write_schedule_as_list()
+write_schedule_as_list(schedule_as_matrix)
 LOG("DONE.")
