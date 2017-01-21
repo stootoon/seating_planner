@@ -107,7 +107,7 @@ def parse_input_file(input_file):
                 if state == "READ_GUEST_PREFERENCES":
                     preferences = zeros((len(guests), len(tables)))
                 elif state == "READ_TABLE_AVAILABILITIES":
-                    availabilities = zeros((len(tables), len(dates)))
+                    availabilities = ones((len(tables), len(dates)))
 
             if old_state != state:
                 LOG("'{}' caused {} => {}".format(line, old_state, state))
