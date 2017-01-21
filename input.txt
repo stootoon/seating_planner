@@ -58,12 +58,15 @@ END_GUEST_PREFERENCES
 # The format is
 # TableName : avail1, avail2,...,availn
 # The order of availabilities should be that in which the dates were specified.
+# A value of 0 means Unavailable
+# A value of 1 means available, with  maximum occupancy set to max_guests_per_table_per_date.
+# A value of n > 1 means available, but with maximum occupancy of n.
 BEGIN_TABLE_AVAILABILITIES
 Cajal:    1,1,1,1,0
-Golgi:    1,1,1,1,1
-Hebb:     0,1,1,1,1
-Katz:     1,1,1,1,1
-Hodgkin:  1,1,1,1,1
+Golgi:    1,1,1,1,12
+Hebb:     0,1,1,1,14
+Katz:     1,1,1,1,9
+Hodgkin:  1,1,1,1,10
 Huxley:   1,1,1,1,0
 Dale:     1,1,1,1,0
 END_TABLE_AVAILABILITIES

@@ -30,7 +30,8 @@ num_rounding_iters               = None # Number of randomnly generated rounded 
 ## The naming convention: A_x__y means the variable x is being summed over,
 ## for (guest, table, date) configurations that match y.
 A_tables__available_tables   = []  
-A_tables__unavailable_tables = []  
+A_tables__unavailable_tables = []
+A_guests                     = []
 A_guests__available_tables   = []  
 A_dates__available_tables    = []  
 A_dates__interested_guests_available_tables = [] 
@@ -40,6 +41,7 @@ A_dates__interested_guests_available_tables = []
 ## the constraint on the values of the sums computed.
 b_tables__available_tables   = []
 b_tables__unavailable_tables = []
+b_guests                     = []
 b_guests__available_tables   = []
 b_dates__available_tables    = []
 b_dates__interested_guests_available_tables = []
@@ -184,6 +186,7 @@ def build_marginalization_matrices():
     ## Constraint matrices
     global A_tables__available_tables
     global A_tables__unavailable_tables
+    global A_guests
     global A_guests__available_tables 
     global A_dates__available_tables
     global A_dates__interested_guests_available_tables
@@ -191,6 +194,7 @@ def build_marginalization_matrices():
     ## Constraint values
     global b_tables__available_tables
     global b_tables__unavailable_tables
+    global b_guests
     global b_guests__available_tables
     global b_dates__available_tables
     global b_dates__interested_guests_available_tables
@@ -205,7 +209,7 @@ def build_marginalization_matrices():
     for g in range(num_guests):
         for d in range(num_dates):
             a = copy(a0)
-            a[g,d,:] = availabilities[:,d]
+            a[g,d,:] = availabilities[:,d]>0
             a_tables__available_tables[g,d,:] = reshape(a,(schedule_length,),order="C")
     A_tables__available_tables = reshape(a_tables__available_tables,(num_guests*num_dates, schedule_length), order="C")
     b_tables__available_tables = A_tables__available_tables[:,0]*0 + 1    
@@ -225,25 +229,35 @@ def build_marginalization_matrices():
     for t in range(num_tables):
         for d in range(num_dates):
             a = copy(a0)
-            a[:,d,t] = availabilities[t,d]
+            a[:,d,t] = availabilities[t,d]>0
             a_guests__available_tables[d,t,:] = reshape(a,(schedule_length,),order="C")
     A_guests__available_tables = reshape(a_guests__available_tables,(num_tables*num_dates, schedule_length), order="C")
     b_guests__available_tables = A_guests__available_tables[:,0]*0 + 1
 
-    available_tables_per_date = sum(availabilities,axis=0).astype(int)
+    a_guests = zeros((num_dates, num_tables, schedule_length))
+    for t in range(num_tables):
+        for d in range(num_dates):
+            a = copy(a0)
+            a[:,d,t] = 1
+            a_guests[d,t,:] = reshape(a,(schedule_length,),order="C")
+    A_guests = reshape(a_guests,(num_tables*num_dates, schedule_length), order="C")
+    b_guests = A_guests[:,0]*0 + 1
+    
+    available_tables_per_date = sum(availabilities>0,axis=0).astype(int)
     number_of_tables_per_date = zeros((sum(available_tables_per_date),))
     ind = 0
     for i in range(len(available_tables_per_date)):
         number_of_tables_per_date[range(ind,ind+available_tables_per_date[i])] = available_tables_per_date[i]
         ind = ind + available_tables_per_date[i]
     mean_table_occupancy_per_date = len(guests)/number_of_tables_per_date.astype(float)
+
     A_table_occupancy = remove_empty_rows(A_guests__available_tables,A_guests__available_tables[:,0])[0]
 
     a_dates__available_tables = zeros((num_guests, num_tables, schedule_length))
     for g in range(num_guests):
         for t in range(num_tables):
             a = copy(a0)
-            a[g,:,t] = availabilities[t,:]
+            a[g,:,t] = availabilities[t,:]>0
             a_dates__available_tables[g,t,:] = reshape(a,(schedule_length,),order="C")
     A_dates__available_tables = reshape(a_dates__available_tables,(num_guests*num_tables, schedule_length), order="C")
     b_dates__available_tables = A_dates__available_tables[:,0]*0 + 1
@@ -252,7 +266,7 @@ def build_marginalization_matrices():
     for g in range(num_guests):
         for t in range(num_tables):
             a = copy(a0)
-            a[g,:,t] = (preferences[g,t]>0)*availabilities[t,:]
+            a[g,:,t] = (preferences[g,t]>0)*(availabilities[t,:]>0)
             a_dates__interested_guests_available_tables[g,t,:] = reshape(a,(schedule_length,),order="C")
     A_dates__interested_guests_available_tables = reshape(a_dates__interested_guests_available_tables,(num_guests*num_tables, schedule_length), order="C")
     b_dates__interested_guests_available_tables = A_dates__interested_guests_available_tables[:,0]*0 + 1
@@ -289,8 +303,13 @@ def build_feasability_matrices():
     
     ## Each tables must be have at most n guests each day.
     # This means that the sum over guests/day/available tables <= n
-    A_ub1 = copy(A_guests__available_tables)
-    b_ub1 = copy(b_guests__available_tables)*max_guests_per_table_per_date
+    # n is specified in the availabilities table.
+    # n = 0: Unavailable
+    # n = 1: max_guests_per_table_per_date
+    # n > 1: User specified availability
+    A_ub1 = copy(A_guests)
+    b_ub1 = reshape(availabilities.T, (num_tables*num_dates,))
+    b_ub1[b_ub1==1] = max_guests_per_table_per_date
     
     ## Each tables must have at least n guests each day.
     # This means that the sum over guests/day/available tables  >= n
@@ -426,11 +445,13 @@ def write_schedule_as_list(schedule_as_matrix):
     LOG("\tWrote {}.".format(file_name))
 
 ### THE DRIVER CODE
+
 if len(sys.argv)!=2:
     print "Usage: seating_plan input.txt"
     exit()
+else:
+    input_file = sys.argv[1]
 
-input_file = sys.argv[1]
 LOG("Parsing {}.".format(input_file))
 parse_input_file(input_file)
     
