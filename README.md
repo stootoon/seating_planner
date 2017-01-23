@@ -1,16 +1,16 @@
 # Seating Planner
-Seating Planner is a python script that generates seating plans for multi-day events. Given a list of guests, tables, and dates, Seating Planner assigns guests to tables for each date, taking into account user preferences for tables and the availability and capacity of each table. 
+Seating Planner is a Python script that generates seating plans for multi-day events (such as computational neuroscience summer schools). Given a list of guests, tables, and dates, Seating Planner assigns guests to tables for each date while taking into account guest preferences for tables and the availability and capacity of each table. 
 
 ## Basic Usage
-To generate a seating plan, run `seating_planner.py` on an input file e.g. `my_input.txt`, from the command line:
+To generate a seating plan, run `seating_planner.py` on an input file e.g. `my_input_file.txt`, from the command line:
 
 ```
-python seating_planner.py my_input.txt
+python seating_planner.py my_input_file.txt
 ```
 
 The resulting schedule is written to `my_input.schedule.list.txt`.
 ## The Input File
-The information that Seating Planner needs to generate a schedule is provided by the **input file**. The input file is a plain text file and provides information about the guests, tables, and dates, and the various parameters of the schedule. The format of the input file is described below.
+The information that Seating Planner needs to generate a schedule is provided by the **input file**. The input file is a plain text file that provides information about the guests, tables, and dates, and the various parameters of the schedule. The format of the input file is described below.
 
 ### Empty Lines and Comments
 Empty lines are ignored. All lines beginning with `#` are treated as comments and ignored.
@@ -72,18 +72,17 @@ BEGIN_TABLE_AVAILABILITIES
 Cajal:    1,1,0,1,4
 END_TABLE_AVAILABILITIES
 ```
-indicates that the table *Cajal* is unavailable on Wednesday, and on Friday can only seat 4 guests, rather than the default.
-
-Unspecified availabilities default to 1, i.e. available with the default number of seats, which is set in the `PARAMS` block.
+indicates that the table *Cajal* is unavailable on Wednesday, and on Friday can only seat at most 4 guests, rather than the default number specified in the [Parameters](#parameters).
+Tables with unspecified availabilities assume the default value for all dates.
 
 ### Parameters
-Generating schedules requires several parameters:
+Generating schedules requires the following parameters to be specified:
 
 1. `max_guests_per_table_per_date`: The default maximum number of guests per table. 
 2. `min_guests_per_table_per_date`: The minimum number of guests per (available) table per date.
 3. `max_each_table_per_guest`: The maximum number of times (computed over all dates) each guest should sit at each table.
 4. `min_each_table_per_guest`: The minimum number of times a guest should sit at a table they expressed interest in.
-5. `occupancy_variance_weight`: How much the variance in table occupancies should be weighted vs. matching guests' preferences. Setting this value higher will tend to make the tables more evenly filled, at the cost of ignoring guests' preferences.
+5. `occupancy_variance_weight`: How much the variance in table occupancies should be weighted vs. matching guests' preferences. Setting this value higher will tend to make the tables more evenly filled, at the cost of ignoring guests' preferences (see [Algorithm](#algorithm))
 6. `random_seed`: The random seed to use when rounding the optimization result (see [Algorithm](#algorithm))
 7. `num_rounding_iters`: The number of random rounded schedules to generate before choosing the best one (see [Algorithm](#algorithm)).
 
@@ -102,3 +101,15 @@ END_PARAMS
 ```
 
 ## Algorithm
+### The schedule representation 
+A schedule is binary multi-dimensional array *X*, where *X[i,j,k]* is equal to 1 if guest *i* is sitting on date *j* at table *k*. We work with the schedule in its vectorized (flattened) form *x*. 
+### The loss function
+The quality of a schedule is defined as its correlation *c'x* with with the guests' preferences matrix, suitably expanded and flattened to yield a vector *c*. To avoid having very unbalanced tables, we also add a term that penalizes the table occupacy variance. This yields the loss function that we want to minimize:  *L(x) = -c'x + alpha * var(table_occupancy(x))*, where *alpha* is the `occupancy_variance_weight` defined in the [Parameters](#parameters) section.
+### The relaxed schedule
+If we insist that the values in *x* be binary, minimizing the loss function can become computationally intractable. So instead, we *relax* their domain to the unit interval [0,1]. We can then minimize the loss over this domain subject to linear constraints enforcing that minimum and maximum table occupancies on each date and the number of times each guest should sit at each table. This is a *convex* problem which will, if it's solvable at all (certain settings of the constraints will render the problem unsolvable), will have a unique minimum, which we call the *relaxed schedule*.
+### Rounding the relaxed solution
+The relaxed schedule looks like a real schedule except that the values of its elements can take on any values between 0 and 1. The process of converting these real values to binary is called rounding. To round our solution we interpret the values in the relaxed solution as the probability that a guest should be seated at a particular table on a given date. We then use these probabilities to generate `num_rounding_iters` random schedules, and pick the one with the lowest loss. This is the *rounded schedule*.
+### Greedy reassignment
+Finally, we perform a greedy reassignment step where we iteratively consider moving guests form one table to another and repeatedly perform the move that reduces the loss the most, until no better moves can be found. This is the *final schedule*.
+## History
+This script was written at the [isiCNI2017](http://isicni.gatsby.ucl.ac.uk/) computational neuroscience summer school in Cape Town, South Africa to seat students at dinner with visiting faculty.
