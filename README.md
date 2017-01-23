@@ -8,7 +8,7 @@ To generate a seating plan, run `seating_planner.py` on an input file e.g. `my_i
 python seating_planner.py my_input_file.txt
 ```
 
-The resulting schedule is written to `my_input.schedule.list.txt`.
+The resulting schedule is written to `my_input.schedule.list.txt`. A sample input file is provided in the repository as `input.txt`.
 ## The Input File
 The information that Seating Planner needs to generate a schedule is provided by the **input file**. The input file is a plain text file that provides information about the guests, tables, and dates, and the various parameters of the schedule. The format of the input file is described below.
 
@@ -56,7 +56,7 @@ Alice  : 1,0,1
 END_GUEST_PREFERENCES
 ```
 states that Alice would like to sit at the Cajal and Hodgkin tables, but not at Golgi. 
-Preferences need to be provided for every (or any) guest, but if provided, the preferences of the guest for each table must be specified.
+Preferences need not be provided for every (or any) guest, but if provided, the preferences of the guest for each table must be specified.
 
 ### Table Availablities
 Table availabilities are provided on separate lines, one per table, as comma-separated lists of integers, with one entry per date, in the order that dates were specified in the `DATES` block. The value of each entry specifies availablity as follows:
