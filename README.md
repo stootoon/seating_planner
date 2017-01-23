@@ -99,6 +99,47 @@ random_seed = 0
 num_rounding_iters = 1000
 END_PARAMS
 ```
+## The Output
+The script generates a schedule as a text file indicating who seats where when. For example, running the script on `input.txt` provided in the repository generates a `input.schedule.list.txt`, the last few lines of which indicate the seating plan on Friday:
+
+```
+FRIDAY
+	Golgi
+		Brigid           (0.0)
+		Vernita          (1.0)
+		Antony           (1.0)
+		Piper            (0.0)
+		Alysia           (1.0)
+		Alba             (1.0)
+		Leila            (1.0)
+	Hodgkin
+		Gema             (1.0)
+		Suzy             (1.0)
+		Lyndon           (2.0)
+		Odell            (1.0)
+		Mi               (2.0)
+		Deetta           (0.0)
+		Xenia            (1.0)
+	Katz
+		Iliana           (2.0)
+		Meagan           (2.0)
+		Lawanna          (0.0)
+		Mauro            (1.0)
+		Alisha           (1.0)
+		Gudrun           (0.0)
+		Daniel           (0.0)
+		Sigrid           (1.0)
+		Loyce            (2.0)
+	Hebb
+		Dorinda          (1.0)
+		Lenore           (0.0)
+		Jarrod           (1.0)
+		Madonna          (0.0)
+		Annie            (0.0)
+		Tobias           (0.0)
+		Rosana           (1.0)
+```
+The numbers in brackets after each guest's name indicates their preference for the table at which they're seated.
 
 ## Algorithm
 ### The schedule representation 
